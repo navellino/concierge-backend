@@ -1,0 +1,5 @@
+# WI-FI
+@property:CT-01 @lang:it
+SSID: FamedaHouse_WIFI
+PASSWORD: Sole123
+NOTE: Copertura migliore in soggiorno.
