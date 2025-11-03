@@ -60,3 +60,42 @@ def activation_email(row: Dict[str, str], locale: str = "it") -> tuple[str, str]
     <p>Buon soggiorno!</p>
     """
     return subject, html
+
+def host_authorization_email(row: Dict[str, str]) -> tuple[str, str]:
+    """Email di notifica all'host quando un ospite completa l'autoregistrazione."""
+
+    property_id = row.get("property_id") or "—"
+    first_name = row.get("guest_first_name") or ""
+    last_name = row.get("guest_last_name") or ""
+    full_name = (first_name + " " + last_name).strip() or last_name or "Ospite"
+
+    arrival = row.get("checkin_date") or "—"
+    departure = row.get("checkout_date") or "—"
+    email = row.get("guest_email") or "—"
+    phone = row.get("guest_phone") or row.get("phone") or "—"
+    locale = row.get("locale") or "—"
+    notes = row.get("notes") or ""
+
+    note_block = ""
+    if notes:
+        safe_notes = notes.replace("\n", "<br>")
+        note_block = f"<p><b>Note fornite dall'ospite:</b><br>{safe_notes}</p>"
+
+    subject = f"Nuovo ospite in attesa di autorizzazione – {property_id}"
+    html = f"""
+    <p>Ciao Host,</p>
+    <p>Un nuovo ospite ha completato l'autoregistrazione tramite il concierge e attende la tua autorizzazione.</p>
+    <ul>
+      <li><b>Struttura</b>: {property_id}</li>
+      <li><b>Ospite</b>: {full_name}</li>
+      <li><b>Arrivo</b>: {arrival}</li>
+      <li><b>Partenza</b>: {departure}</li>
+      <li><b>Email</b>: {email}</li>
+      <li><b>Telefono</b>: {phone}</li>
+      <li><b>Lingua preferita</b>: {locale}</li>
+    </ul>
+    {note_block}
+    <p>Accedi al foglio prenotazioni per autorizzare l'ospite, impostare il codice di self check-in, eventuali coupon e altre informazioni utili.</p>
+    """
+
+    return subject, html

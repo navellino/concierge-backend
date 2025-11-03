@@ -109,12 +109,14 @@ class GuestRegisterReq(BaseModel):
     property_id: Optional[str] = None
     locale: Optional[str] = "it"
     phone: Optional[str] = None
+    checkout_date: Optional[str] = None
     notes: Optional[str] = None
 
 class GuestRegisterRes(BaseModel):
     status: str
     action: str
     data: Dict[str, Any]
+    notification: Optional[str] = None
 
 @router.post("/guest/register", response_model=GuestRegisterRes)
 def guest_register(req: GuestRegisterReq):
@@ -125,20 +127,48 @@ def guest_register(req: GuestRegisterReq):
     """
     from app.services import sheets
 
+    notes = req.notes or ""
+    if req.phone:
+        phone_note = f"Telefono ospite: {req.phone}"
+        if phone_note not in notes:
+            notes = (notes + "\n" if notes else "") + phone_note
+
     payload = {
         "property_id": req.property_id or "CT-01",
         "checkin_date": req.arrival_date,
+        "checkout_date": req.checkout_date or "",
         "guest_last_name": req.last_name,
         "guest_first_name": req.first_name,
         "guest_email": req.guest_email or "",
+        "guest_phone": req.phone or "",
         "locale": req.locale,
-        "notes": req.notes or "",
+        "notes": notes,
         "status": "pending",
         "authorized": "no"
     }
 
     result = sheets.upsert_booking(req.arrival_date, req.last_name, req.first_name, payload)
-    return GuestRegisterRes(status="ok", action=result["action"], data=result["data"])
+    
+    notification_msg = None
+    from app.config import get_settings
+    settings = get_settings()
+    host_emails = settings.HOST_NOTIFICATION_EMAILS
+
+    if host_emails:
+        try:
+            from app.services.mail import send_email
+            from app.services.templates import host_authorization_email
+
+            subject, html = host_authorization_email(result["data"])
+            for email in host_emails:
+                send_email(email, subject, html)
+            notification_msg = f"Notifica inviata all'host ({', '.join(host_emails)})."
+        except Exception as e:
+            notification_msg = f"Errore invio email host: {e}"
+    else:
+        notification_msg = "Email host non configurata: nessuna notifica inviata."
+
+    return GuestRegisterRes(status="ok", action=result["action"], data=result["data"], notification=notification_msg)
 
 class HostAuthorizeReq(BaseModel):
     arrival_date: str

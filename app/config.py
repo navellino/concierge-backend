@@ -24,5 +24,11 @@ class Settings:
         # true -> SSL (465); false -> STARTTLS (587)
         self.SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "true").lower() in ("1", "true", "yes", "y")
 
+        # notifiche host
+        host_emails = os.getenv("HOST_NOTIFICATION_EMAILS", "")
+        if not host_emails:
+            host_emails = os.getenv("HOST_NOTIFICATION_EMAIL", "")
+        self.HOST_NOTIFICATION_EMAILS = [email.strip() for email in host_emails.split(",") if email.strip()]
+
 def get_settings() -> Settings:
     return Settings()
