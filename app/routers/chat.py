@@ -1,15 +1,17 @@
-# app/routers/chat.py (versione aggiornata, compatibile con quanto già hai)
+# app/routers/chat.py
 from __future__ import annotations
+
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from datetime import datetime, date
 
-from app.services import kb
-from app.services.sheets import find_booking, read_row_by_index
+from app.services.kb import kb_snippets_for, season, daypart
+from app.services.local_responder import answer_from_snippets
 from app.services.ai import ask_llm
 
 router = APIRouter(tags=["chat"])
+
 
 class ChatReq(BaseModel):
     message: str
@@ -19,53 +21,57 @@ class ChatReq(BaseModel):
     last_name: Optional[str] = None
     first_name: Optional[str] = None
 
-class ChatRes(BaseModel):
-    text: str
-    used_ai: bool
 
-def _load_guest_row(req: ChatReq) -> Dict[str,str]:
-    if req.arrival_date and req.last_name:
-        idx, rec, count = find_booking(req.arrival_date, req.last_name, req.first_name, req.propertyId)
-        if count == 1 and idx:
-            return read_row_by_index(idx)
-    return {}
+@router.post("/chat")
+async def chat(payload: ChatReq) -> Dict[str, Any]:
+    # 1. dati dalla richiesta
+    user_msg = payload.message
+    property_id = payload.propertyId or "CT-01"
+    locale = payload.locale or "it"
 
-def _hello(name: str | None, locale: str) -> str:
-    if not name: return ""
-    return ("Ciao " if locale == "it" else "Hi ") + name + ", "
-
-@router.post("/chat", response_model=ChatRes)
-def chat(req: ChatReq):
-    t = req.message.lower().strip()
-    row = _load_guest_row(req)
-
+    # 2. calcolo stagione e fascia oraria (le hai già in kb.py)
+    today = date.today()
     now = datetime.now()
-    sez = kb.season(now.date())
-    dayp = kb.daypart(now)
+    current_season = season(today)
+    current_daypart = daypart(now)
 
-    # CONTEXT per placeholder rule-based
-    ctx: Dict[str, Any] = {**row}
-    ci = kb.get_checkin(req.propertyId, req.locale) or {}
-    co = kb.get_checkout(req.propertyId, req.locale) or {}
-    ctx.setdefault("checkin_start", ci.get("start", "12:00"))
-    ctx.setdefault("checkin_end", ci.get("end", "22:00"))
-    ctx.setdefault("checkout_time", co.get("time", "11:00"))
-    hello = _hello(row.get("guest_first_name") or row.get("guest_last_name"), req.locale)
-
-    # ---- RULE-BASED GRATIS (come già fatto) ----
-    # ... (qui rimane tutto il blocco intenti che avevamo inserito: Wi-Fi, check-in/out, codice con gate, ecc.)
-    # Se nessuna regola risponde, facciamo AI.
-
-    # ---- AI COME “PARLATORE” (NO WEB) ----
-    snippets = kb.kb_snippets_for(req.message, req.propertyId, req.locale, top_k=6)
-    answer = ask_llm(
-        req.message,
-        context_snippets=snippets,
-        booking_row=row,
-        property_id=req.propertyId,
-        locale=req.locale,
-        season=sez,
-        daypart=dayp,
+    # 3. prendo gli snippet dal knowledge base
+    snippets = kb_snippets_for(
+        query=user_msg,
+        property_id=property_id,
+        lang=locale,
+        top_k=6,
     )
-    return ChatRes(text=hello + answer, used_ai=True)
 
+    # 4. prima provo SENZA AI (wifi, cose semplici)
+    local_answer = answer_from_snippets(user_msg, snippets)
+    if local_answer:
+        if locale != "it":
+            # chiedi all'AI solo di tradurre la risposta locale
+            translated = ask_llm(
+                f"Translate this into {locale}, keep all codes and numbers identical:\n{local_answer}",
+                context_snippets=[],
+                booking_row={},
+                property_id=property_id,
+                locale=locale,
+                season=current_season,
+                daypart=current_daypart,
+            )
+            return {"text": translated, "used_ai": True}
+        return {"text": local_answer, "used_ai": False}
+
+    # 5. se non ho trovato nulla nei testi, chiamo l’AI
+    ai_answer = ask_llm(
+        user_msg,
+        context_snippets=snippets,
+        booking_row={},          # qui dopo puoi mettere la riga di Google Sheets
+        property_id=property_id,
+        locale=locale,
+        season=current_season,
+        daypart=current_daypart,
+    )
+
+    return {
+        "text": ai_answer,
+        "used_ai": True,
+    }

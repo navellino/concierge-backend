@@ -1,96 +1,66 @@
-# WI-FI
+# WIFI
 @property:CT-01 @lang:it
 SSID: FamedaHouse_WIFI
 PASSWORD: Sole123
 NOTE: Copertura migliore in soggiorno.
 
-# INFO INIZIALI
-Il check-in nella nostra struttura è previsto per le ore 12.00 mentre il check-out è previsto entro le ore 11.00
-Il cellulare a cui chiamare in caso per parlare con l'host è il +39 349 0610125 attivo 24h
-Il cdice di accesso per il self checkin è {clinte.codiceUnicoGenerato} una volta entrati nel muro ci sono presenti i contenitori con le chiavi magnetiche da usare durante il suo soggiorno nella nostra struttra il numero dell'appartamento è {clinte.numero}
-Per il parcheggio abbiamo una convenzione con Garage Europa in via dell'Europa 52, comunica il codice {clinte.CodiceGarage} per uno sconto del 10%
+# WIFI-GUEST
+@property:CT-01 @lang:it
+SSID: FamedaGuest
+PASSWORD: 12345678
+NOTE: Rete per gli ospiti.
 
-# Ristoranti convenzionati ---
-Putì: Ristorante di cucina siciliana contemporanea in Via Sant’Euplio 108, che reinventa la tradizione con ricette regionali reinterpretate per prenotare chiama il n. +39 355 36987455. Comunica il codice {cliente.CoupnRistorante} per uno sconto del 10%
-Ikebana: Lounge/ristorante in Via Pietra dell’Ova 209, con cucina italiana rivisitata in un ambiente lounge per prenotare chiamare il numero +39 349 0625478. Comunica il codice {cliente.CoupnRistorante} per uno sconto del 10%
+# INFO_INIZIALI
+@property:CT-01 @lang:it
+TEXT: Il check-in è previsto per le ore 12:00 e il check-out entro le ore 11:00. \
+Per parlare con l'host chiamare il +39 349 0610125 (attivo 24h). \
+Il codice di accesso per il self check-in è {cliente.codiceUnicoGenerato}. \
+Una volta entrati, nel muro ci sono i contenitori con le chiavi magnetiche: usare quelle durante il soggiorno. \
+Il numero dell'appartamento è {cliente.numero}.
+PARKING: Per il parcheggio abbiamo una convenzione con "Garage Europa" in via dell'Europa 52. Comunica il codice {cliente.CodiceGarage} per uno sconto del 10%.
 
-# Ristoranti ---
-Osteria Antica Marina: Una trattoria storica in Via Pardo 29 (tel: 095 348197), situata all'interno del mercato del pesce. Offre un'atmosfera autentica, pesce fresco, antipasti di mare e pasta ai ricci.
-Trattoria U Fucularu: Una trattoria autentica catanese con cucina casalinga in Via Euplio Reina 20 (tel: +39 389 4551100). Specialità: Pasta alla Norma, caponata, arancini.
-Giardino di Bacco: Ristorante elegante di cucina siciliana contemporanea in Via Etnea 704. Offre piatti creativi con prodotti d’eccellenza siciliani.
-Il Gambero Pazzo: Ristorante di pesce moderno e molto apprezzato in Via Vela 1. Specializzato in crudi di mare e grigliate di pesce.
-Vuciata: Ristorante in Via Gisira 8 con ambiente raffinato. Offre cucina siciliana con attenzione al territorio, usando prodotti locali e piatti rivisitati.
-Me Cumpari Turiddu: Bistrot/ristorante in Piazza Spirito Santo 36 che fonde ricette tradizionali e produzione interna. Specialità: Spaghetti alla Turiddu, involtino di spatola.
-Concezione Restaurant: Un ristorante fine-dining creativo in Via Giuseppe Verdi 143. Offre cucina siciliana d’avanguardia e sperimentale con ingredienti locali.
-Amocù: Ristorante in Via Vecchia Ognina 147b con cucina fusion “Asiano Mood Cuisine” che unisce una base siciliana ad accenti asiatici.
-Sapio: Ristorante stellato di riferimento a Catania, offre alta cucina e piatti creativi.
-Scirocco Sicilian Fish Lab: Situato in Piazza Alonzo di Benedetto 7 (vicino Piazza Duomo). Propone pesce con un approccio “street food / fish lab” in posizione centrale.
-Trattoria Da Peppino: Trattoria casalinga in Via Empedocle 35 con un buon rapporto qualità-prezzo. Serve piatti tipici siciliani tradizionali.
-La Pentolaccia: Locale conviviale in Via Coppola 30, che serve cucina italiana e siciliana tradizionale, con piatti di casa.
-Trattoria del Cavaliere: Storico locale in Via Paternò 11 che serve cucina tipica catanese in un'atmosfera familiare.
-Canni & Pisci: Ristorante in Via Museo Biscari 8, specializzato in pesce, con ambiente elegante. Offre crudi di mare e grigliate.
-Ristorante da Antonio: Ristorante in Via Castello Ursino 59 che serve cucina siciliana tradizionale nel cuore della città.
-Locanda Cerami: Pizza/trattoria in Via Crociferi 69, in zona storica con atmosfera rustico-urbana. Serve pizza e piatti semplici.
-Ciauru i mari: Ristorante di pesce fresco in centro città, situato in Piazza Ogninella 6.
-Il Sale Art Café: Café/ristorante in Via Santa Filomena 10/12 con atmosfera informale e cucina italiana semplice.
-L’Oste Pazzo: Ristorante giovane e vivace in Via Monsignor Ventimiglia 72, con buona cucina creativa e moderna.
-La Cucina dei Colori: Ristorante vegetariano/vegano in Via S. Michele 9. Offre cucina vegetale e opzioni vegane.
-Trattoria Da Mario: Locale tradizionale molto frequentato in Via Crociferi 29, con cucina siciliana casalinga.
+# RISTORANTI_CONVENZIONATI
+@property:CT-01 @lang:it
+- Putì: cucina siciliana contemporanea in Via Sant’Euplio 108. Tel. +39 355 36987455. Comunica il codice {cliente.CouponRistorante} per lo sconto.
+- Ikebana: lounge/ristorante in Via Pietra dell’Ova 209. Tel. +39 349 0625478. Comunica il codice {cliente.CouponRistorante} per lo sconto.
 
-# Farmacie e Guardia Medica ---
-Policlinico G. Rodolico – San Marco (Pronto Soccorso): Azienda ospedaliero-universitaria con Pronto Soccorso generale. Si trova in Via S. Sofia 78 (tel: 095 479 4111).
-ARNAS Garibaldi – Presidio Garibaldi Centro (Pronto Soccorso): Presidio storico con Pronto Soccorso in centro città. Si trova in Piazza S. Maria di Gesù 5/7 (tel: 095 759 1111).
-ARNAS Garibaldi – Presidio Garibaldi Nesima (Pronto Soccorso): Presidio moderno con Pronto Soccorso. Si trova in Via Palermo 636 (tel: 095 759 5000).
-A.O. per l’Emergenza Cannizzaro (Pronto Soccorso): Ospedale per l’emergenza con PS generale. Si trova in Via Messina 829 (tel: 095 7262107).
-Guardia Medica – Catania Centro (Continuità Assistenziale): Guardia medica cittadina situata in Corso Italia 234 (tel: 095 382113 / 095 377122).
-Guardia Medica – Catania San Giorgio: Sede di continuità assistenziale in Stradale San Giorgio 105.
-Farmacia della Guardia (h24): Farmacia di riferimento in zona Ognina, aperta 24 ore. Si trova in Via Duca degli Abruzzi 7 (tel: 095 371 226).
-Farmacia Barriera (h24): Farmacia H24 in zona Barriera/Canalicchio. Si trova in Via del Bosco 391 (tel: 095 716 7117).
-Farmacia Crocerossa: Farmacia spesso in turno nel centro, situata in Via Etnea 274.
-Farmacia Ai Minoriti: Farmacia storica in centro, situata in Via Etnea 79.
-Farmacia Dei Viali: Farmacia in zona corso Italia, situata in Corso Italia 12.
-Farmacia Salus: Farmacia in zona Leucatia/Leopardi, situata in Via G. Leopardi 27.
+# RISTORANTI
+@property:CT-01 @lang:it
+- Osteria Antica Marina: Via Pardo 29 (095 348197), al mercato del pesce. Pesce fresco e cucina tradizionale.
+- Trattoria U Fucularu: Via Euplio Reina 20 (+39 389 4551100), cucina catanese casalinga.
+- Giardino di Bacco: Via Etnea 704, cucina siciliana contemporanea.
+- Il Gambero Pazzo: Via Vela 1, pesce e crudi.
+- Vuciata: Via Gisira 8, cucina siciliana con prodotti locali.
+- Me Cumpari Turiddu: Piazza Spirito Santo 36, cucina siciliana e bistrot.
+- Concezione Restaurant: Via Giuseppe Verdi 143, fine dining creativo.
+- Amocù: Via Vecchia Ognina 147b, cucina fusion siculo-asiatica.
+- Scirocco Sicilian Fish Lab: Piazza Alonzo di Benedetto 7, street food di pesce in centro.
+- Trattoria del Cavaliere: Via Paternò 11, storico locale catanese.
+- Canni & Pisci: Via Museo Biscari 8, pesce e crudi.
+- Sapio: ristorante stellato in città.
+- Locanda Cerami: Via Crociferi 69, pizza e piatti semplici.
+- La Cucina dei Colori: Via S. Michele 9, vegetariano/vegano.
 
-# Attività Invernali (Ottobre - Febbraio) ---
-UCI Cinemas Catania: Multisala moderna con vasta programmazione, situata a San Giovanni la Punta.
-Eplanet Catania: Cinema con film di vari generi e nuove uscite.
-Teatro Massimo Bellini: Storico teatro d’opera di Catania, con un grande cartellone culturale.
-Teatro Sangiorgi: Teatro cittadino per spettacoli e cinema.
-Teatro Verga: Sala teatro per rappresentazioni e cabaret.
-Fiera dei Morti: Tradizionale fiera cittadina che si tiene a Catania a fine ottobre/inizio novembre.
-Ottobrata Zafferanese: Famosa mostra mercato domenicale che si tiene a Zafferana Etnea ogni ottobre, con prodotti tipici dell’Etna.
-Festa di Sant’Agata: Celebrazione principale della patrona della città, si tiene a inizio febbraio.
-Museo del Cinema: Museo a Catania dedicato alla storia del cinema.
-Mercatino Manitese: Mercatino dell’usato e commercio equo-solidale a Catania.
+# EMERGENZA
+@property:CT-01 @lang:it
+HOST_PHONE: +39 349 0610125
+TEXT: In caso di emergenza sanitaria contatta subito il 112 o il 118. Per problemi con l’alloggio chiama l’host.
 
-# Attività Estive (Giugno - Settembre) ---
-Lido America: Stabilimento balneare con spiaggia attrezzata e ristorante sulla Playa di Catania.
-Lido Esagono Beach Club: Lido elegante con mare cristallino ad Aci Castello.
-Lido Internazionale: Spiaggia attrezzata sulla Playa di Catania, ideale per famiglie.
-Lido Etna: Stabilimento balneare comodo e centrale sulla Playa di Catania.
-Lido Arcobaleno: Lido con animazione, giochi e bar sulla Playa di Catania.
-Lido Marguerita: Lido rinomato con servizi completi in provincia di Catania.
-Lido La Risacca: Stabilimento balneare con piscina e bar in provincia di Catania.
-Lido Niki Village: Lido con animazione e discoteca in provincia di Catania.
-Sagra della Pepata di Cozze: Festa culinaria dedicata al mare che si tiene ad Aci Castello.
-Festa di Sant’Agata d’Agosto: Celebrazione estiva della patrona della città a Catania.
+# FARMACIE_E_GUARDIA_MEDICA
+@property:CT-01 @lang:it
+- Policlinico G. Rodolico – San Marco (PS), Via S. Sofia 78, tel. 095 479 4111.
+- ARNAS Garibaldi Centro (PS), Piazza S. Maria di Gesù 5/7, tel. 095 759 1111.
+- ARNAS Garibaldi Nesima (PS), Via Palermo 636, tel. 095 759 5000.
+- A.O. Cannizzaro (PS), Via Messina 829, tel. 095 7262107.
+- Guardia Medica Catania Centro, Corso Italia 234, tel. 095 382113 / 095 377122.
+- Farmacia della Guardia (h24), Via Duca degli Abruzzi 7, tel. 095 371 226.
+- Farmacia Barriera (h24), Via del Bosco 391, tel. 095 716 7117.
 
-# Trasporti e Mobilità ---
-Parcheggio Strisce Blu: La sosta si paga € 0,75 l'ora (dalle 09:00 alle 13:00 e dalle 14:00 alle 20:00). Nel centro storico c'è anche una tariffa notturna di € 1,50 per tutta la notte fino alle 08:00.
-AUTOBUS: Il servizio autobus urbano è gestito da AMTS. La rete collega il centro con le periferie. I biglietti costano circa 1,00 euro e valgono 90 minuti. Esiste un biglietto integrato metro+bus da 120 minuti. Gli autobus possono soffrire di ritardi.
-Alibus: È la linea speciale AMTS che collega rapidamente l’Aeroporto Fontanarossa e il centro città.
-METROPOLITANA: Gestita da FCE, collega punti strategici come centro, porto e zone residenziali. È veloce, economica e integrata con gli autobus AMTS. Le fermate coperte sono ancora limitate.
-CAR SHARING: Il servizio amiGO (station-based) permette di noleggiare auto tramite app e lasciarle in stalli dedicati. Il servizio è a tempo limitato e, secondo comunicazioni ufficiali, verrà interrotto da aprile 2025.
-BIKE SHARING: Gestito anch'esso da amiGO, con biciclette in stazioni dedicate, ideale per spostamenti brevi nel centro storico (spesso i primi 30 minuti sono gratuiti o a tariffa ridotta).
+# ATTIVITA_INVERNALI
+@property:CT-01 @lang:it
+- UCI Cinemas Catania (San Giovanni la Punta).
+- Teatro Massimo Bellini (centro).
+- Teatro Verga.
+- Fiera dei Morti (fine ottobre/inizio novembre).
+- Ottobrata Zafferanese (ottobre, Zafferana Etnea).
 
-# Escursioni ---
-Etna Crateri Sommitali: Durata 6 ore, difficoltà Medio/Alta, costo circa 90€. Tour guidato con Guide Vulcanologiche Etna Nord fino a quota 3300m.
-Etna Morning Tour: Durata 5 ore, difficoltà Media, costo circa 65€. Escursione mattutina con funivia e 4x4 sul versante sud.
-Etna Sunset Tour: Durata 5 ore, difficoltà Media, costo circa 65€. Escursione al tramonto sul versante sud.
-Etna Family Trek: Durata 3 ore, difficoltà Facile, costo circa 40€. Percorso semplice adatto a famiglie sui sentieri del Parco.
-Grotta dei Lamponi Trek: Durata 4 ore, difficoltà Media, costo circa 45€. Trekking sul versante nord con visita a grotte vulcaniche.
-Gita in barca Taormina & Isola Bella: Durata 2 ore, difficoltà Facile, costo circa 35€. Escursione in barca da Giardini Naxos per vedere baie, grotte e Isola Bella.
-Taormina Trekking Monte Venere: Durata 3 ore, difficoltà Media, costo circa 30€. Trekking panoramico nei dintorni di Taormina.
-Etna & Vini Tour: Durata 8 ore, difficoltà Facile, costo circa 120€. Escursione sull’Etna combinata con una degustazione in cantina vinicola.
-Etna in Jeep 4x4: Durata 5 ore, difficoltà Facile, costo circa 70€. Giro avventuroso off-road tra colate e crateri laterali.
-Etna + Gole dell’Alcantara: Durata 9 ore, difficoltà Media, costo circa 95€. Tour combinato dell'Etna e dei canyon fluviali dell'Alcantara.

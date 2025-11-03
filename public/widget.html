@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <title>Concierge AI Widget</title>
+  <link rel="stylesheet" href="/static/widget.css">
+</head>
+<body>
+  <div id="concierge-widget"
+       data-property-id="CT-01"
+       data-locale="it">
+    <div class="cw-header">
+      <div class="cw-title">Concierge</div>
+      <div class="cw-subtitle">Chiedimi info sulla casa e sulla zona</div>
+    </div>
+    <div class="cw-messages" id="cw-messages">
+      <div class="cw-msg cw-msg-bot">
+        Ciao 👋 sono il concierge digitale. Scrivimi cosa ti serve.
+      </div>
+    </div>
+    <form class="cw-input-row" id="cw-form">
+      <input type="text" id="cw-input" placeholder="Scrivi un messaggio..." autocomplete="off" />
+      <button type="submit">Invia</button>
+    </form>
+  </div>
+
+  <script src="/static/widget.js"></script>
+</body>
+</html>
