@@ -197,3 +197,23 @@ def authorize_guest(
     }
     update_row_dict(idx, payload)
     return {"status": "ok", "row_index": idx, "data": read_row_by_index(idx)}
+
+# --- FUNZIONE DI SUPPORTO PER ALTRI FOGLI (es. Logs) ---
+
+def _get_sheet(sheet_name: str):
+    """
+    Ritorna un worksheet diverso da 'Bookings', usando lo stesso file Google.
+    Utile per scrivere i log su una tab chiamata 'Logs'.
+    """
+    s = get_settings()
+    gc = _client()
+    sh = gc.open_by_key(s.GOOGLE_SHEET_ID)
+    return sh.worksheet(sheet_name)
+
+
+def append_row(sheet_name: str, row_values: list[str]) -> None:
+    """
+    Aggiunge una riga in fondo al worksheet indicato.
+    """
+    ws = _get_sheet(sheet_name)
+    ws.append_row(row_values, value_input_option="USER_ENTERED")
