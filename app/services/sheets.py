@@ -7,7 +7,7 @@ import os
 import tempfile
 import zipfile
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from xml.etree import ElementTree as ET
 
 try:  # pragma: no cover - import opzionale
@@ -16,6 +16,10 @@ try:  # pragma: no cover - import opzionale
 except Exception:  # pragma: no cover - ambiente senza dipendenze Google
     gspread = None  # type: ignore
     Credentials = None  # type: ignore
+if TYPE_CHECKING:  # pragma: no cover - solo per i type checker
+    from gspread import Client as GSpreadClient
+else:  # pragma: no cover - a runtime non abbiamo bisogno del tipo
+    GSpreadClient = Any
 from app.config import get_settings
 
 # Scope minimo per leggere/scrivere Google Sheets
@@ -64,7 +68,7 @@ def _determine_backend() -> str:
 # ---------------------------------------------------------------------------
 
 
-def _google_client() -> "gspread.Client":  # pragma: no cover - dipende da Google
+def _google_client() -> GSpreadClient:  # pragma: no cover - dipende da Google
     if not gspread or not Credentials:
         raise RuntimeError("gspread non disponibile")
 
@@ -425,10 +429,9 @@ def update_row_dict(row_index: int, data: dict) -> None:
 def _normalize_name(s: Optional[str]) -> str:
     return (s or "").strip().lower()
 
- """Restituisce la data in formato ISO YYYY-MM-DD."""
-
 def _parse_date_any(s: str) -> str:
-
+    """Restituisce la data in formato ISO YYYY-MM-DD."""
+    
     s = (s or "").strip()
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
         try:
@@ -469,20 +472,20 @@ def find_booking(
     property_id: Optional[str] = None,
 ) -> Tuple[Optional[int], Optional[Dict[str, Any]], int]:
 
-     backend = _determine_backend()
-     if backend == "google":  # pragma: no cover
+    backend = _determine_backend()
+    if backend == "google":  # pragma: no cover
         ws = _google_ws()
         records = [
             {**rec, "_row_index": idx}
             for idx, rec in enumerate(ws.get_all_records(), start=2)
         ]
-     else:
+    else:
         _, records = _excel_extract_rows()
 
-     want_date = _parse_date_any(arrival_date)
-     want_ln = _normalize_name(last_name)
-     want_fn = _normalize_name(first_name)
-     want_pid = (property_id or "").strip()
+    want_date = _parse_date_any(arrival_date)
+    want_ln = _normalize_name(last_name)
+    want_fn = _normalize_name(first_name)
+    want_pid = (property_id or "").strip()
 
     hits: List[Tuple[int, Dict[str, Any]]] = []
     for rec in records:
@@ -511,7 +514,7 @@ def find_booking(
     if len(hits) == 0:
         return None, None, 0
     
-        return None, None, len(hits)
+    return None, None, len(hits)
 
 def upsert_booking(arrival_date: str, last_name: str, first_name: str, payload: dict) -> dict:
     
