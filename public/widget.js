@@ -43,6 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const msgBox = document.getElementById("cw-messages");
   const form = document.getElementById("cw-form");
 
+  if (widget.dataset.propertyId) {
+    guestInfo.propertyId = widget.dataset.propertyId;
+  }
+
+  if (widget.dataset.locale) {
+    guestInfo.locale = widget.dataset.locale;
+  }
+
   // se non abbiamo i dati, mostra login e nascondi chat
   if (!guestInfo.arrival_date || !guestInfo.last_name) {
     loginBox.style.display = "block";
@@ -66,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const res = await fetch("/api/booking/match-guest", {
+      const res = await fetch("/api/match-guest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -76,14 +84,25 @@ document.addEventListener("DOMContentLoaded", () => {
         })
       });
 
+      const payload = await res.json().catch(() => null);
+
       if (!res.ok) {
-        alert("Prenotazione non trovata.");
+        const errMsg = payload?.message || "Prenotazione non trovata.";
+        alert(errMsg);
+        return;
+      }
+
+      if (!payload || payload.status !== "ok") {
+        const statusMsg = payload?.message || "Prenotazione non trovata.";
+        alert(statusMsg);
         return;
       }
 
       // se va bene, salviamo i dati
       guestInfo.arrival_date = date;
       guestInfo.last_name = lastname;
+      guestInfo.propertyId = widget.dataset.propertyId || guestInfo.propertyId;
+      guestInfo.locale = widget.dataset.locale || guestInfo.locale;
       setCookie("concierge_guest", JSON.stringify(guestInfo), 7);
 
       // mostra la chat
@@ -100,8 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- CHAT ORIGINALE ---
   const API_URL = "/api/chat";
-  const propertyId = widget.dataset.propertyId || "CT-01";
-  const locale = widget.dataset.locale || "it";
+  const propertyId = guestInfo.propertyId || widget.dataset.propertyId || "CT-01";
+  const locale = guestInfo.locale || widget.dataset.locale || "it";
   const input = document.getElementById("cw-input");
 
   function appendMessage(text, from = "bot") {

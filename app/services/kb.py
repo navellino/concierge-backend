@@ -113,6 +113,15 @@ def _parse_sections() -> list[dict]:
 # 👇👇 QUI mancava la riga che ti dava errore
 _SECTIONS = _parse_sections()
 
+def _clean_kb_value(value: str) -> str:
+    if not value:
+        return ""
+    cleaned = value.replace("\\\\n", "\n")
+    cleaned = re.sub(r"\\+\s*\n", "\n", cleaned)
+    cleaned = cleaned.replace("\\\\", "")
+    cleaned = cleaned.replace("\\", "")
+    lines = [line.strip() for line in cleaned.splitlines()]
+    return "\n".join(lines).strip()
 # -------------------------------------------------
 # 3. HELPER PER TROVARE SEZIONI
 # -------------------------------------------------
@@ -168,6 +177,52 @@ def get_parking(property_id: str, lang: str = "it") -> Optional[str]:
     if not s:
         return None
     return s["kv"].get("TEXT") or s["text"]
+
+def get_initial_info(property_id: str, lang: str = "it") -> Optional[dict]:
+    section = _find_section("INFO_INIZIALI", property_id, lang)
+    if not section:
+        return None
+
+    parts: list[str] = []
+
+    primary_text = _clean_kb_value(section["kv"].get("TEXT", ""))
+    if primary_text:
+        parts.append(primary_text)
+
+    extra_text = _clean_kb_value(section.get("text", ""))
+    if extra_text:
+        parts.append(extra_text)
+
+    for key, value in section["kv"].items():
+        if key == "TEXT":
+            continue
+        cleaned = _clean_kb_value(value)
+        if cleaned:
+            parts.append(cleaned)
+
+    for item in section.get("items", []):
+        cleaned = _clean_kb_value(item)
+        if cleaned:
+            parts.append(cleaned)
+
+    combined_text = "\n".join(part for part in parts if part).strip()
+
+    time_candidates: list[str] = []
+    for source in (primary_text, extra_text, combined_text):
+        if not source:
+            continue
+        for match in re.findall(r"\b(\d{1,2}:\d{2})\b", source):
+            if match not in time_candidates:
+                time_candidates.append(match)
+
+    checkin_time = time_candidates[0] if time_candidates else None
+    checkout_time = time_candidates[1] if len(time_candidates) > 1 else None
+
+    return {
+        "text": combined_text,
+        "checkin_time": checkin_time,
+        "checkout_time": checkout_time,
+    }
 
 def get_restaurants(property_id: str, lang: str = "it") -> Optional[list[str]]:
     s = _find_section("RESTAURANTS", property_id, lang)

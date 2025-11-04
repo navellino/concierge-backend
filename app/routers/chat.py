@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from datetime import datetime, date
 
-from app.services.kb import kb_snippets_for, season, daypart
+from app.services.kb import kb_snippets_for, season, daypart, get_initial_info
 from app.services.local_responder import answer_from_snippets
 from app.services.ai import ask_llm
 from app.services import sheets
@@ -90,7 +90,7 @@ async def chat(payload: ChatReq) -> Dict[str, Any]:
                 return _log_and_return(text, used_ai=False, extra={"flow": "check_dates", "booking_found": True, "already_registered": True})
             text = (
                 "Perfetto, ho trovato la tua prenotazione dal {arr} al {dep}. "
-                "Per completare la registrazione ho bisogno di nome, cognome, numero di cellulare e indirizzo email."
+                "Per completare la registrazione ho bisogno di nome, cognome e indirizzo email."
             ).format(arr=rec.get("checkin_date", payload.arrival_date), dep=rec.get("checkout_date", payload.departure_date))
             return _log_and_return(text, used_ai=False, extra={"flow": "check_dates", "booking_found": True, "already_registered": False})
         if count == 0:
@@ -138,6 +138,20 @@ async def chat(payload: ChatReq) -> Dict[str, Any]:
                 if phone_note not in notes:
                     notes = (notes + "\n" if notes else "") + phone_note
 
+            initial_info = get_initial_info(property_id, locale)
+            initial_info_text = ""
+            checkin_time_value = rec.get("checkin_time") if rec else ""
+            checkout_time_value = rec.get("checkout_time") if rec else ""
+
+            if initial_info:
+                initial_info_text = (initial_info.get("text") or "").strip()
+                if initial_info_text and initial_info_text not in notes:
+                    notes = (notes + "\n\n" if notes else "") + initial_info_text
+                if initial_info.get("checkin_time"):
+                    checkin_time_value = initial_info["checkin_time"]
+                if initial_info.get("checkout_time"):
+                    checkout_time_value = initial_info["checkout_time"]
+
             status_value = "pending"
             if rec and rec.get("status"):
                 status_value = rec.get("status")
@@ -149,12 +163,34 @@ async def chat(payload: ChatReq) -> Dict[str, Any]:
                 "notes": notes,
                 "locale": locale,
                 "status": status_value or "pending",
-                "guest_phone": payload.phone,
+                "guest_phone": payload.phone or (rec.get("guest_phone") if rec else ""),
             }
+
+            if checkin_time_value:
+                update_payload["checkin_time"] = checkin_time_value
+            if checkout_time_value:
+                update_payload["checkout_time"] = checkout_time_value
+
             sheets.update_row_dict(idx, update_payload)
-            text = (
-                "Grazie {name}! Ho registrato la prenotazione: ora puoi utilizzare il concierge per qualsiasi domanda."
-            ).format(name=payload.first_name)
+            
+            arrival = rec.get("checkin_date") if rec and rec.get("checkin_date") else payload.arrival_date
+            departure = rec.get("checkout_date") if rec and rec.get("checkout_date") else payload.departure_date
+            detail_lines = [
+                f"- Periodo: {arrival} → {departure}",
+            ]
+            if checkin_time_value:
+                detail_lines.append(f"- Check-in: {checkin_time_value}")
+            if checkout_time_value:
+                detail_lines.append(f"- Check-out: {checkout_time_value}")
+            if payload.guest_email:
+                detail_lines.append(f"- Email registrata: {payload.guest_email}")
+
+            text = f"Grazie {payload.first_name}! Ho registrato la tua prenotazione."
+            if detail_lines:
+                text += "\n" + "\n".join(detail_lines)
+            if initial_info_text:
+                text += "\n\n" + initial_info_text
+
             return _log_and_return(text, used_ai=False, extra={"flow": "register", "booking_found": True, "updated_row": idx})
         if count == 0:
             text = (
