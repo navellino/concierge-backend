@@ -64,8 +64,8 @@ from typing import Optional, Dict, Any
 
 class MatchGuestReq(BaseModel):
     arrival_date: str = Field(..., description="Data arrivo, es. 2025-12-10 o 10/12/2025")
-    last_name: str = Field(..., description="Cognome")
-    first_name: Optional[str] = Field(None, description="Nome (opzionale)")
+    departure_date: Optional[str] = Field(None, description="Data partenza (opzionale)")
+    last_name: Optional[str] = Field(None, description="Cognome (se disponibile)")
     property_id: Optional[str] = Field(None, description="ID proprietà (opzionale)")
 
 class MatchGuestRes(BaseModel):
@@ -77,19 +77,42 @@ class MatchGuestRes(BaseModel):
 @router.post("/match-guest", response_model=MatchGuestRes)
 def match_guest(req: MatchGuestReq):
     """
-    Trova la prenotazione nel tab 'Bookings' a partire da data arrivo + cognome
-    (opzionalmente anche nome e/o property_id).
+    Trova la prenotazione nel tab 'Bookings' usando la data di arrivo abbinata
+    al cognome (se fornito) oppure alla data di partenza.
+    È possibile specificare anche nome e/o property_id.
     """
-    from app.services.sheets import find_booking, read_row_by_index
+    from app.services.sheets import (
+        find_booking,
+        find_booking_by_dates,
+        read_row_by_index,
+    )
 
     print(f"[DEBUG] payload ricevuto: {req.dict()}")
 
-    row_index, row_dict, count = find_booking(
-        arrival_date=req.arrival_date,
-        last_name=req.last_name,
-        first_name=req.first_name,
-        property_id=req.property_id,
-    )
+    row_index: Optional[int]
+    row_dict: Optional[Dict[str, Any]]
+    count: int
+
+    if req.last_name:
+        row_index, row_dict, count = find_booking(
+            arrival_date=req.arrival_date,
+            last_name=req.last_name,
+            first_name=req.first_name,
+            property_id=req.property_id,
+        )
+    else:
+        if not req.departure_date:
+            return MatchGuestRes(
+                status="missing_data",
+                message="Specifica anche la data di partenza per identificare la prenotazione.",
+            )
+        row_index, row_dict, count = find_booking_by_dates(
+            arrival_date=req.arrival_date,
+            departure_date=req.departure_date,
+            property_id=req.property_id,
+            require_missing_details=False,
+        )
+
 
     print(f"[DEBUG] risultato find_booking → index={row_index}, count={count}, row={row_dict}")
 

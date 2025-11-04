@@ -22,14 +22,20 @@ let guestInfo = {
   propertyId: "CT-01",
   locale: "it",
   arrival_date: null,
-  last_name: null
+  departure_date: null,
+  last_name: null,
+  first_name: null
 };
 
 // 1) PRIMA cosa: prova a leggere il cookie
 const cookieData = getCookie("concierge_guest");
 if (cookieData) {
   try {
-    guestInfo = JSON.parse(cookieData);
+    const parsed = JSON.parse(cookieData);
+    guestInfo = {
+      ...guestInfo,
+      ...parsed,
+    };
     console.log("Ospite riconosciuto dal cookie:", guestInfo);
   } catch (e) {
     console.warn("Cookie concierge_guest non valido, lo elimino");
@@ -52,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // se non abbiamo i dati, mostra login e nascondi chat
-  if (!guestInfo.arrival_date || !guestInfo.last_name) {
+  if (!guestInfo.arrival_date || !guestInfo.departure_date) {
     loginBox.style.display = "block";
     msgBox.style.display = "none";
     form.style.display = "none";
@@ -65,11 +71,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // gestore login
   document.getElementById("login-btn").addEventListener("click", async () => {
-    const lastname = document.getElementById("login-lastname").value.trim();
-    const date = document.getElementById("login-date").value;
+    const arrival = document.getElementById("login-arrival").value;
+    const departure = document.getElementById("login-departure").value;
 
-    if (!lastname || !date) {
-      alert("Inserisci cognome e data di arrivo.");
+    if (!arrival || !departure) {
+      alert("Inserisci le date di arrivo e di partenza.");
       return;
     }
 
@@ -79,8 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           property_id: guestInfo.propertyId,
-          arrival_date: date,
-          last_name: lastname
+          arrival_date: arrival,
+          departure_date: departure
         })
       });
 
@@ -99,8 +105,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // se va bene, salviamo i dati
-      guestInfo.arrival_date = date;
-      guestInfo.last_name = lastname;
+      guestInfo.arrival_date = arrival;
+      guestInfo.departure_date = departure;
+      if (payload?.data) {
+        guestInfo.last_name = payload.data.guest_last_name || null;
+        guestInfo.first_name = payload.data.guest_first_name || null;
+        guestInfo.departure_date = payload.data.checkout_date || guestInfo.departure_date;
+        guestInfo.arrival_date = payload.data.checkin_date || guestInfo.arrival_date;
+      }
       guestInfo.propertyId = widget.dataset.propertyId || guestInfo.propertyId;
       guestInfo.locale = widget.dataset.locale || guestInfo.locale;
       setCookie("concierge_guest", JSON.stringify(guestInfo), 7);
@@ -110,7 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
       msgBox.style.display = "block";
       form.style.display = "flex";
 
-      appendMessage(`Ciao ${lastname}, ho trovato la tua prenotazione del ${date}.`, "bot");
+      const periodText = guestInfo.departure_date
+        ? `dal ${guestInfo.arrival_date} al ${guestInfo.departure_date}`
+        : `del ${guestInfo.arrival_date}`;
+      const nameText = guestInfo.first_name || guestInfo.last_name;
+      const intro = nameText ? `Ciao ${nameText}!` : "Ottimo!";
+      appendMessage(`${intro} Ho trovato la tua prenotazione ${periodText}.`, "bot");
     } catch (err) {
       console.error(err);
       alert("Errore di connessione al server.");
@@ -154,7 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
           propertyId: propertyId,
           locale: locale,
           arrival_date: guestInfo.arrival_date,
-          last_name: guestInfo.last_name
+          departure_date: guestInfo.departure_date,
+          last_name: guestInfo.last_name,
+          first_name: guestInfo.first_name
         })
       });
 
