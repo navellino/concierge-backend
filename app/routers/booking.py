@@ -82,12 +82,16 @@ def match_guest(req: MatchGuestReq):
     """
     from app.services.sheets import find_booking, read_row_by_index
 
+    print(f"[DEBUG] payload ricevuto: {req.dict()}")
+
     row_index, row_dict, count = find_booking(
         arrival_date=req.arrival_date,
         last_name=req.last_name,
         first_name=req.first_name,
         property_id=req.property_id,
     )
+
+    print(f"[DEBUG] risultato find_booking → index={row_index}, count={count}, row={row_dict}")
 
     if count == 0:
         return MatchGuestRes(status="not_found", message="Nessuna prenotazione trovata.")

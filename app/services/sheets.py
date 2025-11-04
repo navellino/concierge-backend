@@ -7,7 +7,7 @@ import os
 import tempfile
 import zipfile
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 from xml.etree import ElementTree as ET
 
 try:  # pragma: no cover - import opzionale
@@ -82,11 +82,11 @@ def _google_client() -> GSpreadClient:  # pragma: no cover - dipende da Google
     creds = Credentials.from_service_account_info(sa, scopes=SCOPES)
     return gspread.authorize(creds)
 
-def _google_ws():  # pragma: no cover - dipende da Google
+def _google_ws(sheet_name: str = BOOKINGS_SHEET_NAME):  # pragma: no cover - dipende da Google
     settings = get_settings()
     gc = _google_client()
     sh = gc.open_by_key(settings.GOOGLE_SHEET_ID)
-    return sh.worksheet(BOOKINGS_SHEET_NAME)
+    return sh.worksheet(sheet_name)
 
 
 def _google_headers(ws):  # pragma: no cover
@@ -146,14 +146,14 @@ def _excel_zip() -> zipfile.ZipFile:
     return zipfile.ZipFile(BOOKINGS_EXCEL_PATH, "r")
 
 
-def _excel_sheet_path(zf: zipfile.ZipFile) -> str:
+def _excel_sheet_path(zf: zipfile.ZipFile, sheet_name: str = BOOKINGS_SHEET_NAME) -> str:
     workbook = ET.fromstring(zf.read("xl/workbook.xml"))
     rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
 
     target = None
     for sheet in workbook.findall("main:sheets/main:sheet", EXCEL_NS):
         name = sheet.get("name")
-        if name == BOOKINGS_SHEET_NAME:
+        if name == sheet_name:
             rid = sheet.get(
                 "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
             )
@@ -164,7 +164,7 @@ def _excel_sheet_path(zf: zipfile.ZipFile) -> str:
                     target = rel.get("Target")
                     break
     if not target:
-        raise RuntimeError(f"Sheet '{BOOKINGS_SHEET_NAME}' non trovato nel file Excel")
+        raise RuntimeError(f"Sheet '{sheet_name}' non trovato nel file Excel")
     if not target.startswith("xl/"):
         target = f"xl/{target}"
     return target
@@ -185,7 +185,7 @@ def _excel_shared_strings(zf: zipfile.ZipFile) -> List[str]:
 
 def _excel_extract_rows() -> Tuple[Dict[str, str], List[Dict[str, Any]]]:
     with _excel_zip() as zf:
-        sheet_path = _excel_sheet_path(zf)
+        sheet_path = _excel_sheet_path(zf, BOOKINGS_SHEET_NAME)
         shared = _excel_shared_strings(zf)
         sheet_root = ET.fromstring(zf.read(sheet_path))
 
@@ -265,7 +265,7 @@ def _excel_row_by_index(row_index: int) -> Dict[str, Any]:
 
 def _excel_update_row_dict(row_index: int, data: dict) -> None:
     with _excel_zip() as zf:
-        sheet_path = _excel_sheet_path(zf)
+        sheet_path = _excel_sheet_path(zf, BOOKINGS_SHEET_NAME)
         sheet_root = ET.fromstring(zf.read(sheet_path))
         header_map, _ = _excel_extract_rows()
 
@@ -319,7 +319,7 @@ def _excel_update_row_dict(row_index: int, data: dict) -> None:
 
 def _excel_append_row_dict(data: dict) -> None:
     with _excel_zip() as zf:
-        sheet_path = _excel_sheet_path(zf)
+        sheet_path = _excel_sheet_path(zf, BOOKINGS_SHEET_NAME)
         sheet_root = ET.fromstring(zf.read(sheet_path))
         header_map, records = _excel_extract_rows()
 
@@ -361,6 +361,67 @@ def _excel_append_row_dict(data: dict) -> None:
 
     _excel_write_sheet(sheet_root, sheet_path)
 
+def _excel_column_from_index(index: int) -> str:
+    if index < 1:
+        raise ValueError("Index must be >= 1")
+    result = ""
+    while index > 0:
+        index, remainder = divmod(index - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
+
+
+def _excel_append_row(sheet_name: str, values: Iterable[Any]) -> None:
+    with _excel_zip() as zf:
+        sheet_path = _excel_sheet_path(zf, sheet_name)
+        sheet_root = ET.fromstring(zf.read(sheet_path))
+
+    sheet_data = sheet_root.find("main:sheetData", EXCEL_NS)
+    if sheet_data is None:
+        sheet_data = ET.SubElement(
+            sheet_root, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheetData"
+        )
+
+    last_index = 0
+    for row_elem in sheet_data.findall("main:row", EXCEL_NS):
+        try:
+            last_index = max(last_index, int(row_elem.get("r", "0")))
+        except ValueError:
+            continue
+    new_index = last_index + 1 if last_index else 1
+
+    row_elem = ET.SubElement(
+        sheet_data, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}row"
+    )
+    row_elem.set("r", str(new_index))
+
+    normalized_values = ["" if v is None else str(v) for v in values]
+    for offset, value in enumerate(normalized_values, start=1):
+        if value == "":
+            continue
+        column = _excel_column_from_index(offset)
+        cell = ET.SubElement(
+            row_elem, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}c"
+        )
+        cell.set("r", f"{column}{new_index}")
+        cell.set("t", "inlineStr")
+        is_elem = ET.SubElement(
+            cell, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is"
+        )
+        t_elem = ET.SubElement(
+            is_elem, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t"
+        )
+        t_elem.text = value
+
+    dimension = sheet_root.find("main:dimension", EXCEL_NS)
+    if dimension is None:
+        dimension = ET.SubElement(
+            sheet_root, "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}dimension"
+        )
+    end_col = _excel_column_from_index(max(1, len(normalized_values)))
+    dimension.set("ref", f"A1:{end_col}{new_index}")
+
+    _excel_write_sheet(sheet_root, sheet_path)
 
 def _excel_write_sheet(sheet_root: ET.Element, sheet_path: str) -> None:
     xml_bytes = ET.tostring(sheet_root, encoding="utf-8", xml_declaration=True)
@@ -404,6 +465,14 @@ def append_row_dict(data: dict) -> None:
     else:
         _excel_append_row_dict(data)
 
+def append_row(sheet_name: str, row: Iterable[Any]) -> None:
+    backend = _determine_backend()
+    normalized_row = ["" if v is None else str(v) for v in row]
+    if backend == "google":  # pragma: no cover
+        ws = _google_ws(sheet_name)
+        ws.append_row(normalized_row, value_input_option="RAW")
+    else:
+        _excel_append_row(sheet_name, normalized_row)
 
 def read_row_by_index(row_index: int) -> Dict[str, Any]:
     backend = _determine_backend()
@@ -471,8 +540,12 @@ def find_booking(
     first_name: Optional[str] = None,
     property_id: Optional[str] = None,
 ) -> Tuple[Optional[int], Optional[Dict[str, Any]], int]:
+    print(f"[DEBUG sheets] cerco booking: arr={arrival_date} last={last_name} first={first_name} prop={property_id}")
 
     backend = _determine_backend()
+
+    print(f"[DEBUG sheets] backend in uso → {backend}")
+
     if backend == "google":  # pragma: no cover
         ws = _google_ws()
         records = [
@@ -481,6 +554,8 @@ def find_booking(
         ]
     else:
         _, records = _excel_extract_rows()
+        print(f"[DEBUG sheets] lette {len(records)} righe dal file Excel '{BOOKINGS_EXCEL_PATH}' (sheet={BOOKINGS_SHEET_NAME})")
+        
 
     want_date = _parse_date_any(arrival_date)
     want_ln = _normalize_name(last_name)
@@ -495,6 +570,9 @@ def find_booking(
         r_fn = _normalize_name(rec.get("guest_first_name"))
         r_pid = (rec.get("property_id") or "").strip()
 
+        print(f"[DEBUG sheets] confronto riga {idx}: date={r_date}, ln={r_ln}, fn={r_fn}, pid={r_pid}")
+
+
         if r_date != want_date:
             continue
         if r_ln != want_ln:
@@ -505,6 +583,8 @@ def find_booking(
             continue
 
         hits.append((idx, rec))
+
+    print(f"[DEBUG sheets] trovati {len(hits)} risultati compatibili")
 
     if len(hits) == 1:
         idx, rec = hits[0]
