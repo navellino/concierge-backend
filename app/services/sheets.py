@@ -7,6 +7,7 @@ import os
 import tempfile
 import zipfile
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 from xml.etree import ElementTree as ET
 
@@ -25,10 +26,35 @@ from app.config import get_settings
 # Scope minimo per leggere/scrivere Google Sheets
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-BOOKINGS_EXCEL_PATH = os.getenv(
-    "BOOKINGS_EXCEL_PATH",
-    os.path.join(os.getcwd(), "Bookings.xlsx"),
-)
+def _default_excel_path() -> str:
+    """Determina un percorso predefinito affidabile per `Bookings.xlsx`."""
+
+    env_path = os.getenv("BOOKINGS_EXCEL_PATH")
+    if env_path:
+        return os.path.abspath(env_path)
+
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / "Bookings.xlsx",  # root del progetto
+        Path.cwd() / "Bookings.xlsx",       # working directory corrente
+        here.parent / "Bookings.xlsx",      # fallback vicino al modulo
+    ]
+
+    seen: set[str] = set()
+    for candidate in candidates:
+        candidate = candidate.resolve()
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        if candidate.exists():
+            return key
+
+    # Se nessun candidato esiste restituiamo comunque il percorso nella root del progetto.
+    return str(candidates[0].resolve())
+
+
+BOOKINGS_EXCEL_PATH = _default_excel_path()
 BOOKINGS_SHEET_NAME = os.getenv("BOOKINGS_SHEET_NAME", "Bookings")
 
 _BACKEND: Optional[str] = None  # "google" oppure "excel"
